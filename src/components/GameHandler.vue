@@ -1,20 +1,24 @@
 <template>
-  <main class="bg-secondary d-flex flex-wrap">
+  <component
+    v-if="selectedGame"
+    :is="Games[selectedGame as (keyof typeof Games)]"
+  ></component>
+  <div v-if="!selectedGame" class="bg-secondary d-flex flex-wrap">
     <div
-      @click.stop="router.push(`/game/Snake`)"
+      @click.stop="selectedGame = game"
       class="gameSelect"
       role="button"
-      v-for="game in games"
+      v-for="game in Object.keys(Games)"
     >
       {{ game }}
     </div>
-  </main>
+  </div>
 </template>
 <script setup lang="ts">
+import * as Games from "./games";
 import { ref } from "vue";
-import router from "../router";
 
-const games = ref(["SNAKE"]);
+const selectedGame = ref<string | null>(null);
 </script>
 <style scoped>
 .gameSelect {
