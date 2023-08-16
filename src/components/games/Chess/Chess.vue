@@ -7,7 +7,7 @@
           :style="`${col.player == 1 ? 'color: white' : 'color: black'}`"
           :class="`${
             currentMoves.find((e) => e[0] == xIndex && e[1] == yIndex)
-              ? 'highlight'
+              ? 'possibleMove'
               : ''
           }`"
           class="tile"
@@ -75,7 +75,7 @@ main {
 .row:nth-child(even) .tile:nth-child(odd) {
   background: #854000;
 }
-.highlight {
-  background-color: #ff0000 !important;
+.possibleMove {
+  background-color: #2998ff4d !important;
 }
 </style>
