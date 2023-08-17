@@ -9,9 +9,12 @@ export const PIECES = [
 
 export type UnitName = (typeof PIECES)[number] | "";
 
+export type Player = 1 | -1;
 export interface Tile {
   type: UnitName | "";
-  player: 1 | 2 | 0;
+  player: Player | 0;
 }
 
 export type Position = [number, number];
+
+export type Move = { from: Position; to: Position };
