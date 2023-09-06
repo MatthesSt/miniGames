@@ -31,6 +31,16 @@ export function checkedKing(board: Tile[][], checkedPlayer: Player): boolean {
   );
 }
 
+function getAllLegalMoves(board: Tile[][], player: Player): Move[] {
+  return board.flatMap((e, x) =>
+    e.flatMap((t, y) =>
+      board[x][y].player == player
+        ? [...getPossibleMovesFromTile(x, y, board)]
+        : []
+    )
+  );
+}
+
 export function getPossibleMovesFromTile(
   xIndex: number,
   yIndex: number,
@@ -57,10 +67,10 @@ export function getPossibleMovesFromTile(
 function checkLegalMovesPawn(
   xIndex: number,
   yIndex: number,
-  board: Tile[][]
+  board: Tile[][],
+  player: Player | 0 = board[xIndex][yIndex].player
 ): Move[] {
   if (board[xIndex]?.[yIndex]?.type !== "Pawn") return [];
-  let player = board[xIndex][yIndex].player;
   let possibleMoves: Position[] = [];
   console.log(board[xIndex]?.[yIndex]?.player, xIndex, yIndex);
   if (board[xIndex][yIndex - player].player === 0) {
