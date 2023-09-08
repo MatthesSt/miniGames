@@ -7,32 +7,32 @@
       <div class="tile" v-for="n in 36" @click.stop="selectedTile = n">
         <div
           v-if="(getTileX(n)as Index | 5) != 5 && (getTileY(n)as Index | 5) != 5"
+          class="w-100 h-100 position-relative"
+          :style="`background-color:${selectedTile == n ? 'lightgreen' : ''}`"
         >
           <div
-            class="row w-100 h-100"
-            :style="`background-color:${selectedTile == n ? 'lightgreen' : ''}`"
+            style="
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              font-weight: bold;
+              font-size: 1.4rem;
+            "
           >
             {{ currentBoard[n] }}
-            <!-- <div
-              class="col-6 p-0 d-flex justify-content-center align-items-center"
-            >
-              {{ getProbability(n, 0) }}
-            </div>
-            <div
-              class="col-6 p-0 d-flex justify-content-center align-items-center"
-            >
-              {{ getProbability(n, 1) }}
-            </div>
-            <div
-              class="col-6 p-0 d-flex justify-content-center align-items-center"
-            >
-              {{ getProbability(n, 2) }}
-            </div>
-            <div
-              class="col-6 p-0 d-flex justify-content-center align-items-center"
-            >
-              {{ getProbability(n, 3) }}
-            </div> -->
+          </div>
+          <div style="position: absolute; top: 5px; left: 5px">
+            {{ getProbability(n)[0] }}
+          </div>
+          <div style="position: absolute; top: 5px; right: 5px">
+            {{ getProbability(n)[1] }}
+          </div>
+          <div style="position: absolute; bottom: 5px; left: 5px">
+            {{ getProbability(n)[2] }}
+          </div>
+          <div style="position: absolute; bottom: 5px; right: 5px">
+            {{ getProbability(n)[3] }}
           </div>
         </div>
         <div
@@ -40,7 +40,11 @@
         ></div>
         <div v-else class="flex-column">
           <template v-if="(getTileX(n)as Index | 5) == 5">
-            {{ possiblePermutations[`r${getTileY(n)}`].length }}
+            {{
+              getPermutationsOfLine(`r${getTileY(n)}`).filter((e) =>
+                permutationFilter(e, getTileY(n) * 6, true)
+              ).length
+            }}
             <input
               :disabled="solving"
               class="w-75"
@@ -55,7 +59,11 @@
             />
           </template>
           <template v-if="(getTileY(n)as Index | 5) == 5">
-            {{ possiblePermutations[`c${getTileX(n)}`].length }}
+            {{
+              getPermutationsOfLine(`c${getTileX(n)}`).filter((e) =>
+                permutationFilter(e, getTileX(n), false)
+              ).length
+            }}
             <input
               :disabled="solving"
               class="w-75"
@@ -72,8 +80,8 @@
         </div>
       </div>
     </div>
-    <div>
-      <div v-if="selectedTile" class="mt-4">
+    <div class="w-50 d-flex justify-content-between mt-4">
+      <div v-if="selectedTile">
         <div class="d-flex flex-wrap">
           <button
             class="btn btn-primary w-50 border"
@@ -107,12 +115,12 @@
           </button>
         </div>
       </div>
-      <!-- <button class="btn btn-primary mt-4" @click.stop="solve">Solve</button> -->
+      <button class="btn btn-primary mt-4" @click.stop="solve">Solve</button>
     </div>
   </main>
 </template>
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { ref } from "vue";
 
 const solving = ref(false);
 
@@ -145,23 +153,6 @@ const inputValues = ref({
   c41: 2,
 });
 
-watch(selectedTile, () => {
-  console.log({ selectedTile: selectedTile.value });
-});
-
-const possiblePermutations = computed(() => ({
-  r0: getPermutationOfLine("r0").filter((e) => permutationFilter(e, 0, true)),
-  r1: getPermutationOfLine("r1").filter((e) => permutationFilter(e, 6, true)),
-  r2: getPermutationOfLine("r2").filter((e) => permutationFilter(e, 12, true)),
-  r3: getPermutationOfLine("r3").filter((e) => permutationFilter(e, 18, true)),
-  r4: getPermutationOfLine("r4").filter((e) => permutationFilter(e, 24, true)),
-  c0: getPermutationOfLine("c0").filter((e) => permutationFilter(e, 0, false)),
-  c1: getPermutationOfLine("c1").filter((e) => permutationFilter(e, 1, false)),
-  c2: getPermutationOfLine("c2").filter((e) => permutationFilter(e, 2, false)),
-  c3: getPermutationOfLine("c3").filter((e) => permutationFilter(e, 3, false)),
-  c4: getPermutationOfLine("c4").filter((e) => permutationFilter(e, 4, false)),
-}));
-
 function permutationFilter(
   permutation: number[],
   offset: number,
@@ -177,7 +168,7 @@ function permutationFilter(
   return true;
 }
 
-function getPermutationOfLine(input: string) {
+function getPermutationsOfLine(input: string) {
   const sum = inputValues.value[`${input}0` as keyof typeof inputValues.value];
   const bombs =
     inputValues.value[`${input}1` as keyof typeof inputValues.value];
@@ -198,33 +189,40 @@ function getPermutationOfLine(input: string) {
       }
     }
   }
-  // [
-  //   ...new Set(result.map((e) => e.sort((a, b) => a - b).toString())),
-  // ].map((e) => e.split(",").map((e) => +e))
   return result;
 }
 
-// function getProbability(n: number, value: number) {
-//   const rowPermutations = getPermutationOfLine(
-//     inputValues.value[`r${getTileY(n)}0`],
-//     inputValues.value[`r${getTileY(n)}1`]
-//   );
-//   const colPermutations = getPermutationOfLine(
-//     inputValues.value[`c${getTileX(n)}0`],
-//     inputValues.value[`c${getTileX(n)}1`]
-//   );
+function getProbability(n: number) {
+  return [
+    getProbabilityForNumber(n, 0),
+    getProbabilityForNumber(n, 1),
+    getProbabilityForNumber(n, 2),
+    getProbabilityForNumber(n, 3),
+  ].map((e, _, arr) =>
+    Math.floor(e * (100 / arr.reduce((acc, cur) => acc + cur, 0)))
+  );
+}
 
-//   let result = 1;
+function getProbabilityForNumber(n: number, num: 0 | 1 | 2 | 3) {
+  const rowPermutations = getPermutationsOfLine(`r${getTileY(n)}`).filter((e) =>
+    permutationFilter(e, getTileY(n) * 6, true)
+  );
+  const colPermuations = getPermutationsOfLine(`c${getTileX(n)}`).filter((e) =>
+    permutationFilter(e, getTileX(n), false)
+  );
 
-//   result *=
-//     rowPermutations.flat().reduce((a, c) => a + +(c == value), 0) /
-//     rowPermutations.flat().length;
-//   result *=
-//     colPermutations.flat().reduce((a, c) => a + +(c == value), 0) /
-//     colPermutations.flat().length;
+  const rowProbability =
+    rowPermutations.reduce((acc, cur) => acc + +(cur[getTileX(n)] == num), 0) /
+    rowPermutations.length;
+  const colProbability =
+    colPermuations.reduce((acc, cur) => acc + +(cur[getTileY(n)] == num), 0) /
+    colPermuations.length;
 
-//   return Math.floor(result * 100);
-// }
+  if (rowProbability == 0 || colProbability == 0) return 0;
+  if (rowProbability == 1 || colProbability == 1) return 1;
+
+  return rowProbability > colProbability ? rowProbability : colProbability;
+}
 
 function getTileX(n: number) {
   return (~~(n - 1) % 6) as Index;
@@ -233,9 +231,9 @@ function getTileY(n: number) {
   return ~~((n - 1) / 6) as Index;
 }
 
-// function solve() {
-//   solving.value = true;
-// }
+function solve() {
+  solving.value = true;
+}
 </script>
 <style lang="scss" scoped>
 $size: 75px;
@@ -251,5 +249,9 @@ $size: 75px;
     height: 100%;
     width: 100%;
   }
+}
+input {
+  border: none;
+  padding: 0;
 }
 </style>
