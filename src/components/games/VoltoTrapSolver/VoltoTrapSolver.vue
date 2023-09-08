@@ -99,6 +99,12 @@
           >
             3
           </button>
+          <button
+            class="btn btn-primary w-50 border"
+            @click.stop="currentBoard[selectedTile] = null"
+          >
+            null
+          </button>
         </div>
       </div>
       <!-- <button class="btn btn-primary mt-4" @click.stop="solve">Solve</button> -->
@@ -156,11 +162,15 @@ const possiblePermutations = computed(() => ({
   c4: getPermutationOfLine("c4").filter((e) => permutationFilter(e, 4, false)),
 }));
 
-function permutationFilter(permutation: number[], offset = 0, row: boolean) {
+function permutationFilter(
+  permutation: number[],
+  offset: number,
+  row: boolean
+) {
   for (const num of row ? [0, 1, 2, 3, 4] : [0, 6, 12, 18, 24]) {
     if (
       currentBoard.value[num + 1 + offset] != null &&
-      permutation[num] != currentBoard.value[num + 1 + offset]
+      permutation[num / (row ? 1 : 6)] != currentBoard.value[num + 1 + offset]
     )
       return false;
   }
