@@ -4,12 +4,16 @@
     style="height: 100vh; background-color: #28a068"
   >
     <div class="d-grid" :style="`grid-template-columns:repeat(${6},1fr)`">
-      <div class="tile" v-for="n in 36">
+      <div class="tile" v-for="n in 36" @click.stop="selectedTile = n">
         <div
           v-if="(getTileX(n)as Index | 5) != 5 && (getTileY(n)as Index | 5) != 5"
         >
-          <div class="row w-100 h-100">
-            <div
+          <div
+            class="row w-100 h-100"
+            :style="`background-color:${selectedTile == n ? 'lightgreen' : ''}`"
+          >
+            {{ currentBoard[n] }}
+            <!-- <div
               class="col-6 p-0 d-flex justify-content-center align-items-center"
             >
               {{ getProbability(n, 0) }}
@@ -28,53 +32,87 @@
               class="col-6 p-0 d-flex justify-content-center align-items-center"
             >
               {{ getProbability(n, 3) }}
-            </div>
+            </div> -->
           </div>
         </div>
         <div
           v-else-if="(getTileX(n)as Index | 5) == 5 && (getTileY(n)as Index | 5) == 5"
         ></div>
         <div v-else class="flex-column">
-          <input
-            :disabled="solving"
-            class="w-75"
-            type="number"
-            v-if="(getTileX(n)as Index | 5) == 5"
-            v-model="inputValues[`r${getTileY(n)}0`]"
-          />
-          <input
-            :disabled="solving"
-            class="w-75"
-            type="number"
-            v-if="(getTileX(n)as Index | 5) == 5"
-            v-model="inputValues[`r${getTileY(n)}1`]"
-          />
-          <input
-            :disabled="solving"
-            class="w-75"
-            type="number"
-            v-if="(getTileY(n)as Index | 5) == 5"
-            v-model="inputValues[`c${getTileX(n)}0`]"
-          />
-          <input
-            :disabled="solving"
-            class="w-75"
-            type="number"
-            v-if="(getTileY(n)as Index | 5) == 5"
-            v-model="inputValues[`c${getTileX(n)}1`]"
-          />
+          <template v-if="(getTileX(n)as Index | 5) == 5">
+            {{ possiblePermutations[`r${getTileY(n)}`].length }}
+            <input
+              :disabled="solving"
+              class="w-75"
+              type="number"
+              v-model="inputValues[`r${getTileY(n)}0`]"
+            />
+            <input
+              :disabled="solving"
+              class="w-75"
+              type="number"
+              v-model="inputValues[`r${getTileY(n)}1`]"
+            />
+          </template>
+          <template v-if="(getTileY(n)as Index | 5) == 5">
+            {{ possiblePermutations[`c${getTileX(n)}`].length }}
+            <input
+              :disabled="solving"
+              class="w-75"
+              type="number"
+              v-model="inputValues[`c${getTileX(n)}0`]"
+            />
+            <input
+              :disabled="solving"
+              class="w-75"
+              type="number"
+              v-model="inputValues[`c${getTileX(n)}1`]"
+            />
+          </template>
         </div>
       </div>
     </div>
     <div>
-      <button class="btn btn-primary mt-4" @click.stop="solve">Solve</button>
+      <div v-if="selectedTile" class="mt-4">
+        <div class="d-flex flex-wrap">
+          <button
+            class="btn btn-primary w-50 border"
+            @click.stop="currentBoard[selectedTile] = 0"
+          >
+            0
+          </button>
+          <button
+            class="btn btn-primary w-50 border"
+            @click.stop="currentBoard[selectedTile] = 1"
+          >
+            1
+          </button>
+          <button
+            class="btn btn-primary w-50 border"
+            @click.stop="currentBoard[selectedTile] = 2"
+          >
+            2
+          </button>
+          <button
+            class="btn btn-primary w-50 border"
+            @click.stop="currentBoard[selectedTile] = 3"
+          >
+            3
+          </button>
+        </div>
+      </div>
+      <!-- <button class="btn btn-primary mt-4" @click.stop="solve">Solve</button> -->
     </div>
   </main>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 const solving = ref(false);
+
+const selectedTile = ref(-1);
+
+const currentBoard = ref(Array(36).fill(null));
 
 type Index = 0 | 1 | 2 | 3 | 4;
 
@@ -101,7 +139,38 @@ const inputValues = ref({
   c41: 2,
 });
 
-function getPermutationOfRow(sum: number, bombs: number) {
+watch(selectedTile, () => {
+  console.log({ selectedTile: selectedTile.value });
+});
+
+const possiblePermutations = computed(() => ({
+  r0: getPermutationOfLine("r0").filter((e) => permutationFilter(e, 0, true)),
+  r1: getPermutationOfLine("r1").filter((e) => permutationFilter(e, 6, true)),
+  r2: getPermutationOfLine("r2").filter((e) => permutationFilter(e, 12, true)),
+  r3: getPermutationOfLine("r3").filter((e) => permutationFilter(e, 18, true)),
+  r4: getPermutationOfLine("r4").filter((e) => permutationFilter(e, 24, true)),
+  c0: getPermutationOfLine("c0").filter((e) => permutationFilter(e, 0, false)),
+  c1: getPermutationOfLine("c1").filter((e) => permutationFilter(e, 1, false)),
+  c2: getPermutationOfLine("c2").filter((e) => permutationFilter(e, 2, false)),
+  c3: getPermutationOfLine("c3").filter((e) => permutationFilter(e, 3, false)),
+  c4: getPermutationOfLine("c4").filter((e) => permutationFilter(e, 4, false)),
+}));
+
+function permutationFilter(permutation: number[], offset = 0, row: boolean) {
+  for (const num of row ? [0, 1, 2, 3, 4] : [0, 6, 12, 18, 24]) {
+    if (
+      currentBoard.value[num + 1 + offset] != null &&
+      permutation[num] != currentBoard.value[num + 1 + offset]
+    )
+      return false;
+  }
+  return true;
+}
+
+function getPermutationOfLine(input: string) {
+  const sum = inputValues.value[`${input}0` as keyof typeof inputValues.value];
+  const bombs =
+    inputValues.value[`${input}1` as keyof typeof inputValues.value];
   const nums = [0, 1, 2, 3];
   const result = [];
   for (let a of nums) {
@@ -124,37 +193,28 @@ function getPermutationOfRow(sum: number, bombs: number) {
   // ].map((e) => e.split(",").map((e) => +e))
   return result;
 }
-// function safeTileProbability(n: number) {
-//   const greaterOneProbability = getGreaterOneProbability(n);
-//   const bombProbabilty = getBombProbability(n);
 
-//   const probability = greaterOneProbability - bombProbabilty;
-//   const result = probability > 0 ? probability : 0;
+// function getProbability(n: number, value: number) {
+//   const rowPermutations = getPermutationOfLine(
+//     inputValues.value[`r${getTileY(n)}0`],
+//     inputValues.value[`r${getTileY(n)}1`]
+//   );
+//   const colPermutations = getPermutationOfLine(
+//     inputValues.value[`c${getTileX(n)}0`],
+//     inputValues.value[`c${getTileX(n)}1`]
+//   );
 
-//   return result;
+//   let result = 1;
+
+//   result *=
+//     rowPermutations.flat().reduce((a, c) => a + +(c == value), 0) /
+//     rowPermutations.flat().length;
+//   result *=
+//     colPermutations.flat().reduce((a, c) => a + +(c == value), 0) /
+//     colPermutations.flat().length;
+
+//   return Math.floor(result * 100);
 // }
-
-function getProbability(n: number, value: number) {
-  const rowPermutations = getPermutationOfRow(
-    inputValues.value[`r${getTileY(n)}0`],
-    inputValues.value[`r${getTileY(n)}1`]
-  );
-  const colPermutations = getPermutationOfRow(
-    inputValues.value[`c${getTileX(n)}0`],
-    inputValues.value[`c${getTileX(n)}1`]
-  );
-
-  let result = 1;
-
-  result *=
-    rowPermutations.flat().reduce((a, c) => a + +(c == value), 0) /
-    rowPermutations.flat().length;
-  result *=
-    colPermutations.flat().reduce((a, c) => a + +(c == value), 0) /
-    colPermutations.flat().length;
-
-  return Math.floor(result * 100);
-}
 
 function getTileX(n: number) {
   return (~~(n - 1) % 6) as Index;
@@ -163,9 +223,9 @@ function getTileY(n: number) {
   return ~~((n - 1) / 6) as Index;
 }
 
-function solve() {
-  solving.value = true;
-}
+// function solve() {
+//   solving.value = true;
+// }
 </script>
 <style lang="scss" scoped>
 $size: 75px;
